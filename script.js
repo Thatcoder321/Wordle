@@ -132,3 +132,60 @@ window.aiSolve = async function () {
     log.innerHTML += `<strong>AI failed to solve.</strong>`;
   }
 }
+
+window.replayAiSolve = async function () {
+    if (!secretWord) return;
+  
+    // Reset board
+    board.innerHTML = '';
+    currentRow = 0;
+    guesses = [];
+  
+    // Create a fresh board UI
+    for (let i = 0; i < 6; i++) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      for (let j = 0; j < 5; j++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        row.appendChild(tile);
+      }
+      board.appendChild(row);
+    }
+  
+    log.innerHTML = '<strong>AI is solving...</strong><br>';
+    let solved = false;
+  
+    while (!solved && guesses.length < 6) {
+      const res = await fetch('/api/solve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guesses })
+      });
+  
+      const data = await res.json();
+      const guess = data.guess.toLowerCase();
+      const feedback = getFeedback(guess);
+  
+      const row = board.children[currentRow];
+      for (let i = 0; i < 5; i++) {
+        row.children[i].textContent = guess[i].toUpperCase();
+      }
+  
+      colorTiles(guess, feedback);
+      guesses.push({ guess, feedback });
+      log.innerHTML += `AI guessed: ${guess}<br>`;
+      currentRow++;
+  
+      if (guess === secretWord) {
+        solved = true;
+        log.innerHTML += `<strong>AI solved it in ${guesses.length} tries!</strong>`;
+      }
+  
+      await new Promise(r => setTimeout(r, 800));
+    }
+  
+    if (!solved) {
+      log.innerHTML += `<strong>AI failed to solve.</strong>`;
+    }
+  }
