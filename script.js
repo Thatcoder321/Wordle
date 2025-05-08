@@ -1,11 +1,11 @@
 let currentRow = 0;
-const board = document.getElementById('board');
-const guessInput = document.getElementById('guessInput');
-const log = document.getElementById('log');
+let currentCol = 0;
 let secretWord = '';
 let guesses = [];
+const board = document.getElementById('board');
+const log = document.getElementById('log');
 
-// Create empty board
+// Create grid
 for (let i = 0; i < 6; i++) {
   const row = document.createElement('div');
   row.className = 'row';
@@ -21,16 +21,17 @@ async function fetchWord() {
   const res = await fetch('/api/word');
   const data = await res.json();
   secretWord = data.word.toLowerCase();
-  console.log("Secret word:", secretWord); // dev only
+  console.log('Secret word:', secretWord); // for testing
 }
+fetchWord();
 
-function colorTiles(guess, feedback) {
+function getCurrentGuess() {
+  let guess = '';
   const row = board.children[currentRow];
   for (let i = 0; i < 5; i++) {
-    const tile = row.children[i];
-    tile.textContent = guess[i];
-    tile.classList.add(feedback[i]);
+    guess += row.children[i].textContent;
   }
+  return guess.toLowerCase();
 }
 
 function getFeedback(guess) {
@@ -56,18 +57,42 @@ function getFeedback(guess) {
   return feedback;
 }
 
-window.submitGuess = function () {
-  const guess = guessInput.value.toLowerCase();
-  if (guess.length !== 5 || currentRow >= 6) return;
-  const feedback = getFeedback(guess);
-  colorTiles(guess, feedback);
-  guesses.push({ guess, feedback });
-  currentRow++;
-  guessInput.value = '';
-  if (guess === secretWord) {
-    alert('You got it!');
+function colorTiles(guess, feedback) {
+  const row = board.children[currentRow];
+  for (let i = 0; i < 5; i++) {
+    row.children[i].classList.add(feedback[i]);
   }
 }
+
+function handleKey(e) {
+  const row = board.children[currentRow];
+
+  if (e.key === 'Backspace') {
+    if (currentCol > 0) {
+      currentCol--;
+      row.children[currentCol].textContent = '';
+    }
+  } else if (e.key === 'Enter') {
+    if (currentCol === 5) {
+      const guess = getCurrentGuess();
+      const feedback = getFeedback(guess);
+      colorTiles(guess, feedback);
+      guesses.push({ guess, feedback });
+      if (guess === secretWord) {
+        alert('You got it!');
+      }
+      currentRow++;
+      currentCol = 0;
+    }
+  } else if (/^[a-zA-Z]$/.test(e.key)) {
+    if (currentCol < 5) {
+      row.children[currentCol].textContent = e.key.toUpperCase();
+      currentCol++;
+    }
+  }
+}
+
+document.addEventListener('keydown', handleKey);
 
 window.aiSolve = async function () {
   log.textContent = '';
@@ -83,20 +108,27 @@ window.aiSolve = async function () {
     const data = await res.json();
     const guess = data.guess.toLowerCase();
     const feedback = getFeedback(guess);
+
+    const row = board.children[currentRow];
+    for (let i = 0; i < 5; i++) {
+      row.children[i].textContent = guess[i].toUpperCase();
+    }
+
     colorTiles(guess, feedback);
     guesses.push({ guess, feedback });
     log.innerHTML += `AI guessed: ${guess}<br>`;
     currentRow++;
+    currentCol = 0;
+
     if (guess === secretWord) {
       solved = true;
       log.innerHTML += `<strong>AI solved it in ${guesses.length} tries!</strong>`;
     }
-    await new Promise(r => setTimeout(r, 1000)); // pause for effect
+
+    await new Promise(r => setTimeout(r, 1000));
   }
 
   if (!solved) {
     log.innerHTML += `<strong>AI failed to solve.</strong>`;
   }
 }
-
-fetchWord();
