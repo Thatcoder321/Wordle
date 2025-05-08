@@ -8,7 +8,20 @@ export default async function handler(req, res) {
       }).join('')}`;
     }).join('\n');
   
-    const prompt = `You're playing Wordle. Based on these past guesses and feedback, what should your next guess be?\n\n${formatted}\n\nOnly respond with a 5-letter lowercase word guess.`;
+    const prompt = `
+You're playing Wordle.
+
+RULES:
+• A green square (🟩) means correct letter and position.
+• A yellow square (🟨) means the letter is in the word but wrong position.
+• A white square (⬜) means the letter is not in the word at all.
+
+Here are the past guesses and their feedback:
+${formatted}
+
+Please think through the logic of what you now know. Eliminate impossible letters and positions.
+Only return a 5-letter lowercase word guess with no explanation.
+`;
   
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -18,7 +31,10 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }]
+        messages: [
+          { role: "system", content: "You are an expert Wordle solver. Use logical deduction from past guesses and feedback to find the correct word." },
+          { role: "user", content: prompt }
+        ]
       })
     });
   
