@@ -8,6 +8,27 @@ export default async function handler(req, res) {
       }).join(' ')}`;
     }).join('\n\n');
   
+    // Build known info
+    let knownGreens = Array(5).fill('_');
+    let knownYellows = [];
+    let knownGrays = new Set();
+
+    guesses.forEach(g => {
+      g.feedback.forEach((f, i) => {
+        const letter = g.guess[i];
+        if (f === 'green') knownGreens[i] = letter;
+        else if (f === 'yellow') knownYellows.push(letter);
+        else knownGrays.add(letter);
+      });
+    });
+
+    const logicHints = `
+Additional logic hints:
+- Correct letters in correct positions: ${knownGreens.join('')}
+- Letters in the word but unknown positions: ${[...new Set(knownYellows)].join(', ') || 'None'}
+- Letters not in the word: ${[...knownGrays].filter(l => !knownYellows.includes(l) && !knownGreens.includes(l)).join(', ') || 'None'}
+`;
+
     const prompt = `
 You're playing Wordle.
 
@@ -21,6 +42,7 @@ RULES:
 Here are the past guesses and their feedback:
 ${formatted}
 
+${logicHints}
 Use this information to logically eliminate possibilities and return your next 5-letter lowercase guess. Only respond with the guess.`;
   
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
