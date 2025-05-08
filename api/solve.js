@@ -39,6 +39,8 @@ Only return a 5-letter lowercase word guess with no explanation.
     });
   
     const json = await response.json();
-    const guess = json.choices[0].message.content.trim().toLowerCase();
+    const raw = json.choices[0].message.content;
+const match = raw.match(/\b[a-zA-Z]{5}\b/);
+const guess = match ? match[0].toLowerCase() : "crane"; // fallback
     res.status(200).json({ guess });
   }
