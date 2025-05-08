@@ -2,9 +2,11 @@ export default async function handler(req, res) {
     const { guesses } = req.body;
     const formatted = guesses.map(g => {
       return `Guess: ${g.guess}\nFeedback: ${g.feedback.map((f, i) => {
-        if (f === 'green') return `${g.guess[i]} is correct and in the correct position.`;
-        if (f === 'yellow') return `${g.guess[i]} is in the word but in the wrong position.`;
-        return `${g.guess[i]} is not in the word.`;
+        const pos = i + 1;
+        const letter = g.guess[i];
+        if (f === 'green') return `${letter} is correct and in position ${pos}.`;
+        if (f === 'yellow') return `${letter} is in the word but not in position ${pos}.`;
+        return `${letter} is not in the word.`;
       }).join(' ')}`;
     }).join('\n\n');
   
