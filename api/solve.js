@@ -1,3 +1,5 @@
+const CURRENT_WORD = process.env.CURRENT_WORD || null;
+
 export default async function handler(req, res) {
     const { guesses } = req.body;
     const formatted = guesses.map(g => {
@@ -64,7 +66,12 @@ Use this information to logically eliminate possibilities and return your next 5
   
     const json = await response.json();
     const raw = json.choices[0].message.content;
-const match = raw.match(/\b[a-zA-Z]{5}\b/);
-const guess = match ? match[0].toLowerCase() : "crane"; // fallback
-    res.status(200).json({ guess });
-  }
+    const match = raw.match(/\b[a-zA-Z]{5}\b/);
+    const guess = match ? match[0].toLowerCase() : "crane"; // fallback
+
+    // Return both the guess and the current word used
+    res.status(200).json({
+      guess,
+      answer: CURRENT_WORD || 'secret'
+    });
+}
