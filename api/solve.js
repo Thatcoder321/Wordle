@@ -1,27 +1,27 @@
 export default async function handler(req, res) {
     const { guesses } = req.body;
     const formatted = guesses.map(g => {
-      return `${g.guess.toUpperCase()} → ${g.feedback.map(l => {
-        if (l === 'green') return '🟩';
-        if (l === 'yellow') return '🟨';
-        return '⬜';
-      }).join('')}`;
-    }).join('\n');
+      return `Guess: ${g.guess}\nFeedback: ${g.feedback.map((f, i) => {
+        if (f === 'green') return `${g.guess[i]} is correct and in the correct position.`;
+        if (f === 'yellow') return `${g.guess[i]} is in the word but in the wrong position.`;
+        return `${g.guess[i]} is not in the word.`;
+      }).join(' ')}`;
+    }).join('\n\n');
   
     const prompt = `
 You're playing Wordle.
 
 RULES:
-• A green square (🟩) means correct letter and position.
-• A yellow square (🟨) means the letter is in the word but wrong position.
-• A white square (⬜) means the letter is not in the word at all.
+- Each guess must be a 5-letter word.
+- I will tell you for each letter:
+   • If it is correct and in the correct position
+   • If it is in the word but in the wrong position
+   • If it is not in the word
 
 Here are the past guesses and their feedback:
 ${formatted}
 
-Please think through the logic of what you now know. Eliminate impossible letters and positions.
-Only return a 5-letter lowercase word guess with no explanation.
-`;
+Use this information to logically eliminate possibilities and return your next 5-letter lowercase guess. Only respond with the guess.`;
   
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
